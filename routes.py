@@ -1,6 +1,7 @@
 from flask import render_template, request
 from app import app, db
 from models import Visit
+from datetime import datetime
 
 def get_client_ip():
     """Get the client's IP address from various possible headers"""
@@ -16,8 +17,16 @@ def get_client_ip():
 def index():
     try:
         client_ip = get_client_ip()
-        # Save visit to database
-        visit = Visit(ip_address=client_ip)
+        # Check if IP exists
+        visit = Visit.query.filter_by(ip_address=client_ip).first()
+        if visit:
+            # Update existing visit
+            visit.visit_count += 1
+            visit.last_visit = datetime.utcnow()
+        else:
+            # Create new visit
+            visit = Visit(ip_address=client_ip)
+
         db.session.add(visit)
         db.session.commit()
         return render_template('index.html', ip_address=client_ip)
@@ -27,5 +36,5 @@ def index():
 
 @app.route('/admin/visits')
 def admin_visits():
-    visits = Visit.query.order_by(Visit.visit_time.desc()).all()
+    visits = Visit.query.order_by(Visit.last_visit.desc()).all()
     return render_template('admin/visits.html', visits=visits)

@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Historia odwiedzin</title>
-    
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    
+
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -26,14 +26,22 @@
                         <thead>
                             <tr>
                                 <th>IP</th>
-                                <th>Data i czas</th>
+                                <th>Liczba wizyt</th>
+                                <th>Pierwsza wizyta</th>
+                                <th>Ostatnia wizyta</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for visit in visits %}
                             <tr>
                                 <td>{{ visit.ip_address }}</td>
-                                <td>{{ visit.visit_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>
+                                    <span class="badge bg-info">
+                                        {{ visit.visit_count }}
+                                    </span>
+                                </td>
+                                <td>{{ visit.first_visit.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                <td>{{ visit.last_visit.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -41,7 +49,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="mt-3">
             <a href="/" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i>

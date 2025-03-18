@@ -26,6 +26,7 @@
                         <thead>
                             <tr>
                                 <th>IP</th>
+                                <th>Lokalizacja</th>
                                 <th>Liczba wizyt</th>
                                 <th>Pierwsza wizyta</th>
                                 <th>Ostatnia wizyta</th>
@@ -35,6 +36,24 @@
                             {% for visit in visits %}
                             <tr>
                                 <td>{{ visit.ip_address }}</td>
+                                <td>
+                                    {% if visit.city and visit.country %}
+                                        <i class="fas fa-map-marker-alt text-info"></i>
+                                        {{ visit.city }}, {{ visit.region }}, {{ visit.country }}
+                                        {% if visit.latitude and visit.longitude %}
+                                            <br>
+                                            <small class="text-muted">
+                                                <a href="https://www.google.com/maps?q={{ visit.latitude }},{{ visit.longitude }}" 
+                                                   target="_blank" class="text-info">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                    Zobacz na mapie
+                                                </a>
+                                            </small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">Brak danych</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <span class="badge bg-info">
                                         {{ visit.visit_count }}

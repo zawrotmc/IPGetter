@@ -2,6 +2,8 @@ from flask import render_template, request
 from app import app, db
 from models import Visit
 from datetime import datetime
+import requests
+import logging
 
 def get_client_ip():
     """Get the client's IP address from various possible headers"""
@@ -13,19 +15,46 @@ def get_client_ip():
         ip = request.remote_addr
     return ip
 
+def get_geolocation(ip):
+    """Get geolocation data for an IP address"""
+    try:
+        response = requests.get(f'http://ip-api.com/json/{ip}')
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('status') == 'success':
+                return {
+                    'country': data.get('country'),
+                    'city': data.get('city'),
+                    'region': data.get('regionName'),
+                    'latitude': data.get('lat'),
+                    'longitude': data.get('lon')
+                }
+    except Exception as e:
+        app.logger.error(f"Error getting geolocation: {str(e)}")
+    return {}
+
 @app.route('/')
 def index():
     try:
         client_ip = get_client_ip()
         # Check if IP exists
         visit = Visit.query.filter_by(ip_address=client_ip).first()
+
         if visit:
             # Update existing visit
             visit.visit_count += 1
             visit.last_visit = datetime.utcnow()
         else:
-            # Create new visit
-            visit = Visit(ip_address=client_ip)
+            # Create new visit and get geolocation
+            geo_data = get_geolocation(client_ip)
+            visit = Visit(
+                ip_address=client_ip,
+                country=geo_data.get('country'),
+                city=geo_data.get('city'),
+                region=geo_data.get('region'),
+                latitude=geo_data.get('latitude'),
+                longitude=geo_data.get('longitude')
+            )
 
         db.session.add(visit)
         db.session.commit()

@@ -12,8 +12,8 @@ app = Flask(__name__)
 # Set the secret key for session management
 app.secret_key = os.environ.get("SESSION_SECRET", "dev_key_only_for_development")
 
-# configure the SQLite database, relative to the app instance folder
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+# Use SQLite database
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///visits.db"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,

@@ -1,4 +1,4 @@
-from flask import render_template, request
+from flask import render_template, request, redirect
 from app import app, db
 from models import Visit
 from datetime import datetime
@@ -35,8 +35,31 @@ def get_geolocation(ip):
 
 @app.route('/')
 def index():
+    """Redirect to allpvp.pl but record the IP first"""
+    try:
+        # Record the visit
+        record_visit(get_client_ip())
+        # Redirect to allpvp.pl
+        return redirect("http://is.allpvp.pl")
+    except Exception as e:
+        app.logger.error(f"Error handling redirect: {str(e)}")
+        return redirect("http://is.allpvp.pl")
+
+@app.route('/checkip')
+def checkip():
+    """Show visitor their IP address"""
     try:
         client_ip = get_client_ip()
+        # Record the visit
+        record_visit(client_ip)
+        return render_template('index.html', ip_address=client_ip)
+    except Exception as e:
+        app.logger.error(f"Error handling visit: {str(e)}")
+        return render_template('index.html', error="Unable to detect IP address")
+
+def record_visit(client_ip):
+    """Record or update a visit in the database"""
+    try:
         # Check if IP exists
         visit = Visit.query.filter_by(ip_address=client_ip).first()
 
@@ -58,10 +81,10 @@ def index():
 
         db.session.add(visit)
         db.session.commit()
-        return render_template('index.html', ip_address=client_ip)
+        return True
     except Exception as e:
-        app.logger.error(f"Error handling visit: {str(e)}")
-        return render_template('index.html', error="Unable to detect IP address")
+        app.logger.error(f"Error recording visit: {str(e)}")
+        return False
 
 @app.route('/admin/visits')
 def admin_visits():

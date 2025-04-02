@@ -14,17 +14,17 @@
 <body>
     <div class="container py-4">
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h1 class="card-title mb-0">
+            <div class="card-header">
+                <h1 class="card-title mb-3 text-center">
                     <i class="fas fa-history text-info"></i>
                     Historia odwiedzin
                 </h1>
-                <div>
-                    <button id="selectAllBtn" class="btn btn-sm btn-secondary me-2">
+                <div class="d-flex flex-column align-items-center gap-2">
+                    <button id="selectAllBtn" class="btn btn-secondary w-100 mb-2">
                         <i class="fas fa-check-square"></i> 
                         Zaznacz wszystko
                     </button>
-                    <button id="deselectAllBtn" class="btn btn-sm btn-secondary">
+                    <button id="deselectAllBtn" class="btn btn-secondary w-100">
                         <i class="fas fa-square"></i> 
                         Odznacz wszystko
                     </button>
@@ -95,8 +95,8 @@
                         </table>
                     </div>
 
-                    <div class="d-flex justify-content-end mb-3">
-                        <button type="submit" class="btn btn-danger">
+                    <div class="d-flex justify-content-center mb-3">
+                        <button type="submit" class="btn btn-danger w-100">
                             <i class="fas fa-trash-alt"></i> Usuń zaznaczone
                         </button>
                     </div>
@@ -104,12 +104,12 @@
             </div>
         </div>
 
-        <div class="mt-3 d-flex justify-content-between">
-            <a href="/" class="btn btn-secondary">
+        <div class="mt-3 d-flex flex-column align-items-center gap-2">
+            <a href="/" class="btn btn-secondary w-100 mb-2">
                 <i class="fas fa-arrow-left"></i>
                 Powrót
             </a>
-            <a href="{{ url_for('admin_logout') }}" class="btn btn-danger">
+            <a href="{{ url_for('admin_logout') }}" class="btn btn-danger w-100">
                 <i class="fas fa-sign-out-alt"></i>
                 Wyloguj
             </a>

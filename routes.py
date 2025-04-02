@@ -35,15 +35,17 @@ def get_geolocation(ip):
 
 @app.route('/')
 def index():
-    """Redirect to allpvp.pl but record the IP first"""
+    """Show redirect page to allpvp.pl and record the IP"""
     try:
+        # Get client IP
+        client_ip = get_client_ip()
         # Record the visit
-        record_visit(get_client_ip())
-        # Redirect to allpvp.pl
-        return redirect("http://is.allpvp.pl")
+        record_visit(client_ip)
+        # Show redirect page with the IP address
+        return render_template('redirect.html', ip_address=client_ip)
     except Exception as e:
         app.logger.error(f"Error handling redirect: {str(e)}")
-        return redirect("http://is.allpvp.pl")
+        return render_template('redirect.html', ip_address="Nieznane")
 
 @app.route('/checkip')
 def checkip():

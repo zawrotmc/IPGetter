@@ -35,18 +35,6 @@ def get_geolocation(ip):
 
 @app.route('/')
 def index():
-    """Redirect to allpvp.pl and silently record the IP"""
-    try:
-        # Record the visit in the background
-        record_visit(get_client_ip())
-    except Exception as e:
-        app.logger.error(f"Error recording IP: {str(e)}")
-    
-    # Redirect immediately without showing any intermediate page
-    return redirect("http://is.allpvp.pl")
-
-@app.route('/checkip')
-def checkip():
     """Show visitor their IP address"""
     try:
         client_ip = get_client_ip()
@@ -56,6 +44,18 @@ def checkip():
     except Exception as e:
         app.logger.error(f"Error handling visit: {str(e)}")
         return render_template('index.html', error="Unable to detect IP address")
+
+@app.route('/itemshop')
+def itemshop():
+    """Redirect to allpvp.pl and silently record the IP"""
+    try:
+        # Record the visit in the background
+        record_visit(get_client_ip())
+    except Exception as e:
+        app.logger.error(f"Error recording IP: {str(e)}")
+    
+    # Redirect immediately without showing any intermediate page
+    return redirect("http://is.allpvp.pl")
 
 def record_visit(client_ip):
     """Record or update a visit in the database"""

@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, session, url_for
+from flask import render_template, request, redirect, session, url_for, flash
 from app import app, db
 from models import Visit
 from datetime import datetime
@@ -113,3 +113,32 @@ def admin_visits():
     
     visits = Visit.query.order_by(Visit.last_visit.desc()).all()
     return render_template('admin/visits.html', visits=visits)
+
+# Delete selected visits
+@app.route('/admin/delete-visits', methods=['POST'])
+def admin_delete_visits():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    selected_visits = request.form.getlist('selected_visits')
+    
+    if not selected_visits:
+        return redirect(url_for('admin_visits'))
+    
+    try:
+        # Delete selected visits
+        deleted_count = 0
+        for visit_id in selected_visits:
+            visit = Visit.query.get(visit_id)
+            if visit:
+                db.session.delete(visit)
+                deleted_count += 1
+        
+        db.session.commit()
+        flash(f'Usunięto {deleted_count} wybranych wpisów.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error deleting visits: {str(e)}")
+        flash('Wystąpił błąd podczas usuwania wpisów.', 'danger')
+    
+    return redirect(url_for('admin_visits'))

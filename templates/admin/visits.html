@@ -14,58 +14,93 @@
 <body>
     <div class="container py-4">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h1 class="card-title mb-0">
                     <i class="fas fa-history text-info"></i>
                     Historia odwiedzin
                 </h1>
+                <div>
+                    <button id="selectAllBtn" class="btn btn-sm btn-secondary me-2">
+                        <i class="fas fa-check-square"></i> 
+                        Zaznacz wszystko
+                    </button>
+                    <button id="deselectAllBtn" class="btn btn-sm btn-secondary">
+                        <i class="fas fa-square"></i> 
+                        Odznacz wszystko
+                    </button>
+                </div>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>IP</th>
-                                <th>Lokalizacja</th>
-                                <th>Liczba wizyt</th>
-                                <th>Pierwsza wizyta</th>
-                                <th>Ostatnia wizyta</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for visit in visits %}
-                            <tr>
-                                <td>{{ visit.ip_address }}</td>
-                                <td>
-                                    {% if visit.city and visit.country %}
-                                        <i class="fas fa-map-marker-alt text-info"></i>
-                                        {{ visit.city }}, {{ visit.region }}, {{ visit.country }}
-                                        {% if visit.latitude and visit.longitude %}
-                                            <br>
-                                            <small class="text-muted">
-                                                <a href="https://www.google.com/maps?q={{ visit.latitude }},{{ visit.longitude }}" 
-                                                   target="_blank" class="text-info">
-                                                    <i class="fas fa-external-link-alt"></i>
-                                                    Zobacz na mapie
-                                                </a>
-                                            </small>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <form id="deleteForm" action="{{ url_for('admin_delete_visits') }}" method="post">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Wybierz</th>
+                                    <th>IP</th>
+                                    <th>Lokalizacja</th>
+                                    <th>Liczba wizyt</th>
+                                    <th>Pierwsza wizyta</th>
+                                    <th>Ostatnia wizyta</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for visit in visits %}
+                                <tr>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input visit-checkbox" type="checkbox" name="selected_visits" value="{{ visit.id }}" id="visit-{{ visit.id }}">
+                                        </div>
+                                    </td>
+                                    <td>{{ visit.ip_address }}</td>
+                                    <td>
+                                        {% if visit.city and visit.country %}
+                                            <i class="fas fa-map-marker-alt text-info"></i>
+                                            {{ visit.city }}, {{ visit.region }}, {{ visit.country }}
+                                            {% if visit.latitude and visit.longitude %}
+                                                <br>
+                                                <small class="text-muted">
+                                                    <a href="https://www.google.com/maps?q={{ visit.latitude }},{{ visit.longitude }}" 
+                                                       target="_blank" class="text-info">
+                                                        <i class="fas fa-external-link-alt"></i>
+                                                        Zobacz na mapie
+                                                    </a>
+                                                </small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">Brak danych</span>
                                         {% endif %}
-                                    {% else %}
-                                        <span class="text-muted">Brak danych</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <span class="badge bg-info">
-                                        {{ visit.visit_count }}
-                                    </span>
-                                </td>
-                                <td>{{ visit.first_visit.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                                <td>{{ visit.last_visit.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ visit.visit_count }}
+                                        </span>
+                                    </td>
+                                    <td>{{ visit.first_visit.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>{{ visit.last_visit.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-end mb-3">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt"></i> Usuń zaznaczone
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -83,5 +118,45 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript for select/deselect functionality -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAllBtn = document.getElementById('selectAllBtn');
+            const deselectAllBtn = document.getElementById('deselectAllBtn');
+            const checkboxes = document.querySelectorAll('.visit-checkbox');
+            
+            // Select all checkboxes
+            selectAllBtn.addEventListener('click', function() {
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+            });
+            
+            // Deselect all checkboxes
+            deselectAllBtn.addEventListener('click', function() {
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+            });
+            
+            // Form validation - prevent submission if no checkboxes are selected
+            document.getElementById('deleteForm').addEventListener('submit', function(event) {
+                let atLeastOneChecked = false;
+                checkboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        atLeastOneChecked = true;
+                    }
+                });
+                
+                if (!atLeastOneChecked) {
+                    event.preventDefault();
+                    alert('Zaznacz przynajmniej jeden adres IP do usunięcia.');
+                } else if (!confirm('Czy na pewno chcesz usunąć zaznaczone wpisy?')) {
+                    event.preventDefault();
+                }
+            });
+        });
+    </script>
 </body>
 </html>

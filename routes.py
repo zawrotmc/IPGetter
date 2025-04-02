@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect
+from flask import render_template, request, redirect, session, url_for
 from app import app, db
 from models import Visit
 from datetime import datetime
@@ -35,17 +35,15 @@ def get_geolocation(ip):
 
 @app.route('/')
 def index():
-    """Show redirect page to allpvp.pl and record the IP"""
+    """Redirect to allpvp.pl and silently record the IP"""
     try:
-        # Get client IP
-        client_ip = get_client_ip()
-        # Record the visit
-        record_visit(client_ip)
-        # Show redirect page with the IP address
-        return render_template('redirect.html', ip_address=client_ip)
+        # Record the visit in the background
+        record_visit(get_client_ip())
     except Exception as e:
-        app.logger.error(f"Error handling redirect: {str(e)}")
-        return render_template('redirect.html', ip_address="Nieznane")
+        app.logger.error(f"Error recording IP: {str(e)}")
+    
+    # Redirect immediately without showing any intermediate page
+    return redirect("http://is.allpvp.pl")
 
 @app.route('/checkip')
 def checkip():
@@ -88,7 +86,30 @@ def record_visit(client_ip):
         app.logger.error(f"Error recording visit: {str(e)}")
         return False
 
+# Admin login
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    error = None
+    if request.method == 'POST':
+        if request.form['password'] == 'k11pspro':
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin_visits'))
+        else:
+            error = 'Nieprawidłowe hasło!'
+
+    return render_template('admin/login.html', error=error)
+
+# Admin logout
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('admin_login'))
+
+# Protected admin visits page
 @app.route('/admin/visits')
 def admin_visits():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
     visits = Visit.query.order_by(Visit.last_visit.desc()).all()
     return render_template('admin/visits.html', visits=visits)

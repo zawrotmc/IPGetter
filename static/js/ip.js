@@ -2,6 +2,19 @@ function refreshPage() {
     window.location.reload();
 }
 
+// Keep the server alive
+function keepAlive() {
+    fetch('/keep-alive', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    }).catch(console.error);
+}
+
+// Send keep-alive request every 30 seconds
+setInterval(keepAlive, 30000);
+
 // Add copy functionality if needed in the future
 document.addEventListener('DOMContentLoaded', function() {
     const ipAddress = document.getElementById('ipAddress');

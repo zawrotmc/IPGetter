@@ -3,12 +3,6 @@ function refreshPage() {
 }
 
 // Add copy functionality if needed in the future
-// Keep connection alive
-const events = new EventSource('/heartbeat');
-events.onmessage = function(event) {
-    // Heartbeat received
-};
-
 document.addEventListener('DOMContentLoaded', function() {
     const ipAddress = document.getElementById('ipAddress');
     if (ipAddress) {

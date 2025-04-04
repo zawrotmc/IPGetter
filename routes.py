@@ -1,4 +1,5 @@
-from flask import render_template, request, redirect, session, url_for, flash
+from flask import render_template, request, redirect, session, url_for, flash, Response
+from time import sleep
 from app import app, db
 from models import Visit
 from datetime import datetime
@@ -142,3 +143,11 @@ def admin_delete_visits():
         flash('Wystąpił błąd podczas usuwania wpisów.', 'danger')
     
     return redirect(url_for('admin_visits'))
+@app.route('/heartbeat')
+def heartbeat():
+    def generate():
+        while True:
+            yield "data: ping\n\n"
+            sleep(30)  # Send ping every 30 seconds
+    
+    return Response(generate(), mimetype='text/event-stream')

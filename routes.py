@@ -7,14 +7,13 @@ import logging
 import os
 from dotenv import load_dotenv
 
+load_dotenv()
+
 def get_admin_password():
-    if os.path.exists('.env'):
-        load_dotenv()
     admin_password = os.getenv("PASSWORD")
     if not admin_password or admin_password.strip() == "":
         return "password"
-    else:
-        return admin_password.strip()
+    return admin_password.strip()
 
 def get_client_ip():
     if request.headers.get('X-Forwarded-For'):

